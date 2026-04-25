@@ -1,0 +1,47 @@
+---
+source_url: {{ source_url }}
+source_platform: xiaohongshu
+xhs_id: {{ xhs_id }}
+author: {{ author }}
+author_id: {{ author_id }}
+captured_at: {{ captured_at }}
+published_at: {{ published_at }}
+content_type: {{ content_type }}
+tags:
+{% for tag in tags %}  - {{ tag }}
+{% endfor %}media:
+{% for m in media %}  - {{ m }}
+{% endfor %}status: {{ status }}
+priority: {{ priority }}
+---
+
+# {{ title }}
+
+> {{ summary }}
+
+---
+
+## 原文
+
+{{ body }}
+{% if ocr_sections %}
+
+---
+
+## OCR 识别文字
+{% for section in ocr_sections %}
+
+### {{ section.label }}
+
+{{ section.text }}
+{% endfor %}
+{% endif %}
+{% if media %}
+
+---
+
+## 媒体
+{% for m in media %}
+![]({{ m }})
+{% endfor %}
+{% endif %}
