@@ -9,8 +9,8 @@ dependencies = [
     "jinja2>=3.1",
     "python-frontmatter>=1.1",
     "click>=8.1",
-    "mcp>=1.6",
     "pillow>=10.0",
+    "python-dotenv>=1.0",
 ]
 
 [build-system]

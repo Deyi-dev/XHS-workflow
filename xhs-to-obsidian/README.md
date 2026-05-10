@@ -49,7 +49,7 @@ uv sync
 |----------|----------|---------|-------------|
 | `OBSIDIAN_VAULT_PATH` | **yes** | — | Absolute path to Obsidian vault root |
 | `GEMINI_API_KEY` | recommended | — | Google Gemini API key for image OCR and classification. Falls back to metadata-only if absent. |
-| `XHS_MCP_URL` | no | `http://localhost:18060/mcp` | Override MCP server URL |
+| `XHS_COOKIES_PATH` | no | `~/.xhs-mcp/bin/cookies.json` | XHS session cookies. Refresh via `~/.xhs-mcp/bin/xiaohongshu-login-darwin-arm64`. No long-running MCP server needed. |
 
 Set them in your shell or a `.env` file:
 
@@ -139,9 +139,10 @@ No agent-specific APIs or SDKs are used inside the scripts.
 
 | Error code | Cause | Fix |
 |-----------|-------|-----|
-| `MCP_UNREACHABLE` | xiaohongshu-mcp not running | `docker compose up -d` |
-| `NOT_LOGGED_IN` | Cookies expired | Re-scan QR code in MCP browser |
+| `LOGIN_REQUIRED` | Cookies missing or expired | Run `~/.xhs-mcp/bin/xiaohongshu-login-darwin-arm64` to refresh |
+| `RATE_LIMITED` | XHS triggered "访问频繁" (error_code 300013) | Wait an hour or change IP. Lower `--concurrency` for `batch_ingest.py` |
 | `INVALID_URL` | Short link expired or malformed | Get a fresh share link from the app |
 | `NOTE_DELETED` | Note removed from platform | Nothing to do |
+| `SCRAPE_FAILED` | Page loaded but `__INITIAL_STATE__` is missing/unparseable | XHS may have changed its page format |
 | `ARCHIVE_FAILED` | Vault path wrong | Check `OBSIDIAN_VAULT_PATH` |
 | Gemini 429 | Rate limit hit | Reduce image count or wait 60 s |

@@ -28,10 +28,11 @@ This downloads the note and runs Gemini analysis but does **not** write to the v
 It prints a JSON object to stdout. Parse it.
 
 **On error** (`status == "error"`):
-- `step: "download"` + `error_code: "MCP_UNREACHABLE"` → tell user to start xiaohongshu-mcp
-- `step: "download"` + `error_code: "NOT_LOGGED_IN"` → tell user to scan the QR code in the MCP browser
+- `step: "download"` + `error_code: "LOGIN_REQUIRED"` → cookies are missing or expired. Tell the user to run `bin/xiaohongshu-login-darwin-arm64` (from project root `xhs-to-obsidian/`) and re-try
+- `step: "download"` + `error_code: "RATE_LIMITED"` → XHS triggered "访问频繁" (error_code=300013). Wait an hour or change IP before retrying
 - `step: "download"` + `error_code: "INVALID_URL"` → the link may be expired; ask user to share a new one
 - `step: "download"` + `error_code: "NOTE_DELETED"` → note has been removed from the platform
+- `step: "download"` + `error_code: "SCRAPE_FAILED"` → page loaded but `__INITIAL_STATE__` is missing/unparseable; XHS may have changed its page format
 - `step: "analyze"` → analysis failed; proceed to step 2 and note `status: lite`
 - `step: "archive"` → vault write failed; check `OBSIDIAN_VAULT_PATH`
 
@@ -68,7 +69,7 @@ Report to user:
 
 | Layer | Responsibility |
 |-------|----------------|
-| **Scripts** | All deterministic work: HTTP calls, MCP calls, Gemini API, file I/O |
+| **Scripts** | All deterministic work: HTTP calls, Gemini API, file I/O |
 | **Agent** | Read JSON output, present to user, handle confirmation dialogue, optionally tweak frontmatter fields before commit |
 
 The agent must **not** write markdown files directly; always go through `archive.py` or `ingest.py --commit`.
@@ -81,7 +82,13 @@ The agent must **not** write markdown files directly; always go through `archive
 |----------|---------|
 | `GEMINI_API_KEY` | Gemini vision analysis (graceful fallback if absent) |
 | `OBSIDIAN_VAULT_PATH` | Absolute path to Obsidian vault root |
-| `XHS_MCP_URL` | Override MCP URL (default: `http://localhost:18060/mcp`) |
+| `XHS_COOKIES_PATH` | XHS session cookies path (default: `bin/cookies.json` relative to project) |
+
+**Login**: when you get `LOGIN_REQUIRED`, run from `xhs-to-obsidian/`:
+```bash
+bin/xiaohongshu-login-darwin-arm64
+```
+扫码后 cookies 写入 `bin/cookies.json`。No long-running server needed.
 
 ---
 

@@ -51,6 +51,21 @@ def _slugify(text: str, max_len: int = 60) -> str:
 
 
 # ---------------------------------------------------------------------------
+# Existing note lookup
+# ---------------------------------------------------------------------------
+
+def _find_existing_note(inbox_dir: Path, xhs_id: str) -> Path | None:
+    """Return the path of an existing note with this xhs_id, or None."""
+    for md_file in inbox_dir.glob("*.md"):
+        try:
+            if f"xhs_id: {xhs_id}" in md_file.read_text(encoding="utf-8")[:500]:
+                return md_file
+        except Exception:
+            continue
+    return None
+
+
+# ---------------------------------------------------------------------------
 # Relative path from note to attachment
 # ---------------------------------------------------------------------------
 
@@ -99,6 +114,18 @@ def archive(work_dir: Path, priority: str = "medium", status: str = "lite") -> d
             "summary": metadata.get("title", ""),
         }
 
+    # ---- Load summary (tagline + category) ----
+    summary_path = work_dir / "summary.json"
+    if summary_path.exists():
+        summary_data = json.loads(summary_path.read_text())
+    else:
+        summary_data = {
+            "tagline": metadata.get("title", "") or "（无标题）",
+            "category": "其他",
+        }
+    tagline = summary_data.get("tagline") or metadata.get("title", "")
+    category = summary_data.get("category") or "其他"
+
     xhs_id = metadata["xhs_id"]
     title = metadata.get("title") or "Untitled"
 
@@ -122,11 +149,10 @@ def archive(work_dir: Path, priority: str = "medium", status: str = "lite") -> d
     note_filename = f"{note_date}-{slug}.md"
     note_path = inbox_dir / note_filename
 
-    # Avoid overwriting existing notes
-    if note_path.exists():
-        ts = datetime.now(tz=timezone.utc).strftime("%H%M%S")
-        note_filename = f"{note_date}-{slug}-{ts}.md"
-        note_path = inbox_dir / note_filename
+    # If a note with this xhs_id already exists, update it in place.
+    existing = _find_existing_note(inbox_dir, xhs_id)
+    if existing:
+        note_path = existing
 
     # ---- Copy media files ----
     attach_dir = vault / "attachments" / "xhs" / xhs_id
@@ -180,13 +206,13 @@ def archive(work_dir: Path, priority: str = "medium", status: str = "lite") -> d
         author_id=metadata.get("author_id", ""),
         captured_at=metadata.get("captured_at", ""),
         published_at=metadata.get("published_at", ""),
-        content_type=analysis.get("content_type", "other"),
+        category=category,
+        tagline=tagline,
         tags=merged_tags,
         media=media_rel_paths,
         status=status,
         priority=priority,
         title=title,
-        summary=analysis.get("summary", ""),
         body=metadata.get("body", ""),
         ocr_sections=ocr_sections,
     )
@@ -198,7 +224,8 @@ def archive(work_dir: Path, priority: str = "medium", status: str = "lite") -> d
         "rel_path": str(note_path.relative_to(vault)),
         "xhs_id": xhs_id,
         "title": title,
-        "content_type": analysis.get("content_type", "other"),
+        "category": category,
+        "tagline": tagline,
         "tags": merged_tags,
         "media_count": len(media_rel_paths),
     }
