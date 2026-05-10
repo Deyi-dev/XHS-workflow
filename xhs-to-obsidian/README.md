@@ -2,34 +2,38 @@
 
 Archive Xiaohongshu notes to your Obsidian vault with one command.
 
-**Pipeline:** XHS URL → xiaohongshu-mcp → Gemini 2.5 Flash OCR/classification → Obsidian markdown
+**Architecture:** XHS URL → Direct page scrape + cookies → Obsidian markdown
 
 ---
 
 ## Prerequisites
 
-### 1. xiaohongshu-mcp (local service)
-
-Clone and start the MCP server from **[xpzouying/xiaohongshu-mcp](https://github.com/xpzouying/xiaohongshu-mcp)**:
-
-```bash
-# Docker (recommended)
-docker compose up -d
-
-# Or run the binary directly
-./xiaohongshu-mcp-darwin-arm64        # macOS ARM
-./xiaohongshu-mcp-linux-amd64         # Linux x86
-```
-
-The server listens on `http://localhost:18060/mcp` by default.
-
-**Login:** Open the MCP browser UI and scan the QR code with your Xiaohongshu app once, then cookies are stored automatically.
-
-### 2. Python ≥ 3.11 + uv
+### 1. Python ≥ 3.11 + uv
 
 ```bash
 curl -Lsf https://astral.sh/uv/install.sh | sh
 ```
+
+### 2. XHS Login Binary
+
+Download from **[xpzouying/xiaohongshu-mcp releases](https://github.com/xpzouying/xiaohongshu-mcp/releases)** → `xiaohongshu-login-*`:
+
+```bash
+# Choose your platform:
+# - macOS arm64:   xiaohongshu-login-darwin-arm64
+# - macOS x86:     xiaohongshu-login-darwin-amd64
+# - Linux x86:     xiaohongshu-login-linux-amd64
+# - Windows:       xiaohongshu-login-windows-amd64.exe
+
+mkdir -p bin
+mv xiaohongshu-login-darwin-arm64 bin/
+chmod +x bin/xiaohongshu-login-*
+
+# Run once to scan QR code and save cookies
+./bin/xiaohongshu-login-darwin-arm64
+```
+
+Cookies are stored in `bin/cookies.json`. Re-run the login binary when cookies expire.
 
 ---
 

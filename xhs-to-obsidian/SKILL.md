@@ -84,11 +84,22 @@ The agent must **not** write markdown files directly; always go through `archive
 | `OBSIDIAN_VAULT_PATH` | Absolute path to Obsidian vault root |
 | `XHS_COOKIES_PATH` | XHS session cookies path (default: `bin/cookies.json` relative to project) |
 
-**Login**: when you get `LOGIN_REQUIRED`, run from `xhs-to-obsidian/`:
-```bash
-bin/xiaohongshu-login-darwin-arm64
-```
-扫码后 cookies 写入 `bin/cookies.json`。No long-running server needed.
+**Login**: when you get `LOGIN_REQUIRED`:
+
+1. Download the login binary for your platform from [xpzouying/xiaohongshu-mcp releases](https://github.com/xpzouying/xiaohongshu-mcp/releases):
+   - macOS arm64: `xiaohongshu-login-darwin-arm64`
+   - macOS x86: `xiaohongshu-login-darwin-amd64`
+   - Linux x86: `xiaohongshu-login-linux-amd64`
+   - Windows: `xiaohongshu-login-windows-amd64.exe`
+
+2. Place it in `bin/` and make it executable: `chmod +x bin/xiaohongshu-login-*`
+
+3. Run and scan the QR code:
+   ```bash
+   ./bin/xiaohongshu-login-darwin-arm64  # (or your platform)
+   ```
+
+4. Cookies are written to `bin/cookies.json`. No long-running server needed.
 
 ---
 
