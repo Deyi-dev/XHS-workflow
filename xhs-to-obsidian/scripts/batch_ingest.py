@@ -47,13 +47,13 @@ def update_queue(updates: dict[int, str]) -> None:
     QUEUE_PATH.write_text("\n".join(lines) + "\n")
 
 
-def process_one(url: str) -> str:
+def process_one(url: str, section: str) -> str:
     """Run ingest._run() in this thread. Returns 'committed' or 'error:<code>'."""
     from dotenv import load_dotenv
     load_dotenv(Path(__file__).parent.parent / ".env")
 
     from ingest import _run
-    result = _run(url, commit=True, skip_summarize=True, priority="medium", note_status="lite")
+    result = _run(url, section=section)
     status = result.get("status", "error")
     if status != "committed":
         code = result.get("error_code", status)
@@ -65,6 +65,11 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--concurrency", type=int, default=2)
     parser.add_argument("--filter", default="---", dest="filter_prefix", metavar="STATUS")
+    parser.add_argument(
+        "--section",
+        default="📦 Other",
+        help="Index section for all batched notes (no per-note classification in batch mode).",
+    )
     args = parser.parse_args()
 
     entries = load_queue(args.filter_prefix)
@@ -79,7 +84,10 @@ def main() -> None:
     abort_reason: str | None = None
 
     with ThreadPoolExecutor(max_workers=args.concurrency) as pool:
-        futures = {pool.submit(process_one, url): idx for idx, url in entries}
+        futures = {
+            pool.submit(process_one, url, args.section): idx
+            for idx, url in entries
+        }
         pending_updates: dict[int, str] = {}
 
         for i, future in enumerate(as_completed(futures), 1):

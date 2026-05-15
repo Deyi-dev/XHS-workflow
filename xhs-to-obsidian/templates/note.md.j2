@@ -6,37 +6,17 @@ author: {{ author }}
 author_id: {{ author_id }}
 captured_at: {{ captured_at }}
 published_at: {{ published_at }}
-category: {{ category }}
-tagline: {{ tagline | tojson }}
 tags:
 {% for tag in tags %}  - {{ tag }}
 {% endfor %}media:
 {% for m in media %}  - {{ m }}
-{% endfor %}status: {{ status }}
-priority: {{ priority }}
----
+{% endfor %}---
 
 # {{ title }}
-
-> {{ tagline }}
-
----
 
 ## 原文
 
 {{ body }}
-{% if ocr_sections %}
-
----
-
-## OCR 识别文字
-{% for section in ocr_sections %}
-
-### {{ section.label }}
-
-{{ section.text }}
-{% endfor %}
-{% endif %}
 {% if media %}
 
 ---

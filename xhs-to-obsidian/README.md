@@ -52,14 +52,12 @@ uv sync
 | Variable | Required | Default | Description |
 |----------|----------|---------|-------------|
 | `OBSIDIAN_VAULT_PATH` | **yes** | — | Absolute path to Obsidian vault root |
-| `GEMINI_API_KEY` | recommended | — | Google Gemini API key for image OCR and classification. Falls back to metadata-only if absent. |
-| `XHS_COOKIES_PATH` | no | `~/.xhs-mcp/bin/cookies.json` | XHS session cookies. Refresh via `~/.xhs-mcp/bin/xiaohongshu-login-darwin-arm64`. No long-running MCP server needed. |
+| `XHS_COOKIES_PATH` | no | `bin/cookies.json` | XHS session cookies. Refresh via `bin/xiaohongshu-login-*`. No long-running MCP server needed. |
 
 Set them in your shell or a `.env` file:
 
 ```bash
 export OBSIDIAN_VAULT_PATH="/Users/you/Documents/MyVault"
-export GEMINI_API_KEY="AIza..."
 ```
 
 ---
@@ -69,14 +67,16 @@ export GEMINI_API_KEY="AIza..."
 ### Full pipeline (recommended)
 
 ```bash
-# Preview – downloads + analyses, does NOT write to vault
+# Phase 1 – download + archive into the vault, print JSON with section list
 uv run scripts/ingest.py "http://xhslink.com/o/6NpcvjCnxOk"
 
-# Commit – same as above but also writes to vault
-uv run scripts/ingest.py "http://xhslink.com/o/6NpcvjCnxOk" --commit
+# Phase 2 – record the chosen section in _index.md
+uv run scripts/ingest.py "http://xhslink.com/o/6NpcvjCnxOk" \
+    --section "🤖 Dev/AI/Tech" --tagline "一句话总结"
 ```
 
-Output is a JSON object that agents (or you) can inspect before committing.
+Archive happens in phase 1 and is content-independent. Classification is a
+separate phase-2 step driven by whoever reads the archived note.
 
 ### Run individual steps
 
@@ -84,10 +84,7 @@ Output is a JSON object that agents (or you) can inspect before committing.
 # Step 1: download only
 uv run scripts/download.py "https://www.xiaohongshu.com/explore/<id>?xsec_token=..." /tmp/xhs-mywork
 
-# Step 2: analyse images
-uv run scripts/analyze.py /tmp/xhs-mywork
-
-# Step 3: write to vault
+# Step 2: write to vault
 uv run scripts/archive.py /tmp/xhs-mywork
 ```
 
@@ -114,12 +111,12 @@ author:           # display name
 author_id:        # user ID
 captured_at:      # ISO timestamp of archiving
 published_at:     # ISO timestamp from the platform
-content_type:     # recipe | workout | snowboarding | long-form-article | video-tutorial | other
-tags:             # merged from platform tags + Gemini suggestions
+tags:             # platform tags parsed from the note
 media:            # relative paths to attachment files
-status:           # lite | full
-priority:         # low | medium | high (default: medium)
 ```
+
+Classification (which `_index.md` section the note belongs to) is **not**
+stored in frontmatter — it lives only in `0_inbox/xhs/_index.md`.
 
 ---
 
@@ -143,10 +140,9 @@ No agent-specific APIs or SDKs are used inside the scripts.
 
 | Error code | Cause | Fix |
 |-----------|-------|-----|
-| `LOGIN_REQUIRED` | Cookies missing or expired | Run `~/.xhs-mcp/bin/xiaohongshu-login-darwin-arm64` to refresh |
+| `LOGIN_REQUIRED` | Cookies missing or expired | Run `bin/xiaohongshu-login-darwin-arm64` to refresh |
 | `RATE_LIMITED` | XHS triggered "访问频繁" (error_code 300013) | Wait an hour or change IP. Lower `--concurrency` for `batch_ingest.py` |
 | `INVALID_URL` | Short link expired or malformed | Get a fresh share link from the app |
 | `NOTE_DELETED` | Note removed from platform | Nothing to do |
 | `SCRAPE_FAILED` | Page loaded but `__INITIAL_STATE__` is missing/unparseable | XHS may have changed its page format |
 | `ARCHIVE_FAILED` | Vault path wrong | Check `OBSIDIAN_VAULT_PATH` |
-| Gemini 429 | Rate limit hit | Reduce image count or wait 60 s |
